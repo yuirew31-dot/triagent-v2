@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "triagent-v2",
+      "script": "npm run server:start",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "3000"
+      }
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding-bottom: 1rem;
+}
+
+.tabButton {
+  padding: 0.5rem 1rem;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.tabButton:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+}
+
+.tabButton.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.input {
+  padding: 0.8rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-size: 0.9rem;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.addButton {
+  padding: 0.8rem;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.description {
+  background: rgba(51, 65, 85, 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.description h3 {
+  margin: 0 0 0.5rem 0;
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.description p {
+  margin: 0.3rem 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.description a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.description a:hover {
+  text-decoration: underline;
+}

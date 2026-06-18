@@ -1,0 +1,6 @@
+build:
+  buildpacks:
+    - nixpacks.io/nodejs
+  build-command: npm run server:build && npm run client:build
+run:
+  web: npm run server:start

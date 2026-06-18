@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  triagent:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      FIREWORKS_API_KEY: ${FIREWORKS_API_KEY}
+      SILICONFLOW_API_KEY: ${SILICONFLOW_API_KEY}
+      GEMINI_API_KEY_1: ${GEMINI_API_KEY_1}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+    volumes:
+      - ./triagent.db:/app/triagent.db
