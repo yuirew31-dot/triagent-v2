@@ -18,6 +18,7 @@ export default defineConfig({
   },
   build: {
     target: 'ES2020',
-    outDir: 'dist',
+    outDir: '../dist',
+    emptyOutDir: true,
   },
 });
