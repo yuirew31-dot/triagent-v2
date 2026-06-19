@@ -1,10 +1,15 @@
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { setupWS } from './ws.js';
 import { queries, Task } from './db.js';
 import { addAccount } from './accountPool.js';
 import { smartOrchestrate, getUsageMetrics, compressContextManually } from './smart-orchestrator.js';
 import { v4 as uuid } from 'uuid';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || [
@@ -19,6 +24,21 @@ const fastify = Fastify({ logger: true });
 await fastify.register(fastifyCors, {
   origin: CORS_ORIGIN,
   credentials: true,
+});
+
+// ── STATIC FILES ──────────────────────────────────────────────────────────────
+const publicPath = join(dirname(__dirname), 'dist');
+await fastify.register(fastifyStatic, {
+  root: publicPath,
+  prefix: '/',
+});
+
+// SPA fallback: serve index.html for all non-API routes
+fastify.setNotFoundHandler(async (request, reply) => {
+  if (!request.url.startsWith('/api') && !request.url.startsWith('/ws')) {
+    return reply.sendFile('index.html');
+  }
+  return reply.status(404).send({ error: 'Not found' });
 });
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
