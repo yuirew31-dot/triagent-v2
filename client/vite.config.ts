@@ -18,6 +18,6 @@ export default defineConfig({
   },
   build: {
     target: 'ES2020',
-    outDir: '../server/public',
+    outDir: 'dist',
   },
 });

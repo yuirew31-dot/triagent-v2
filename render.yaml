@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: triagent-api
+    env: node
+    region: ohio
+    plan: free
+    branch: main
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: HOST
+        value: "0.0.0.0"
+      # Add your API keys in the Render dashboard
+      # Do NOT commit API keys to this file!
+
+  - type: static_site
+    name: triagent-dashboard
+    region: ohio
+    plan: free
+    branch: main
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist
+    autoDeploy: true
+    routes:
+      - path: /
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://triagent-api.render.com
+        # Update this to match your actual API URL after deployment
