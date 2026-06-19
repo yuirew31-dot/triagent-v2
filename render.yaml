@@ -32,5 +32,5 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://triagent-api.render.com
+        value: https://triagent-v2.onrender.com
         # Update this to match your actual API URL after deployment
