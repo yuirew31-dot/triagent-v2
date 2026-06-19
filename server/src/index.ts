@@ -7,7 +7,11 @@ import { smartOrchestrate, getUsageMetrics, compressContextManually } from './sm
 import { v4 as uuid } from 'uuid';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://triagent-dashboard.onrender.com'
+];
 
 const fastify = Fastify({ logger: true });
 
