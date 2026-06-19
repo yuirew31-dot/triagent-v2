@@ -3,6 +3,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFile } from 'fs/promises';
 import { setupWS } from './ws.js';
 import { queries, Task } from './db.js';
 import { addAccount } from './accountPool.js';
@@ -156,13 +157,19 @@ const publicPath = join(dirname(__dirname), 'client', 'dist');
 await fastify.register(fastifyStatic, {
   root: publicPath,
   prefix: '/',
-  constraints: {}, // Serve all static files
 });
 
-// SPA fallback: serve index.html for all non-API routes
+// SPA fallback: serve index.html for all non-API GET requests
 fastify.setNotFoundHandler(async (request, reply) => {
-  if (!request.url.startsWith('/api') && !request.url.startsWith('/ws')) {
-    return reply.sendFile('index.html', publicPath);
+  if (request.method === 'GET' && !request.url.startsWith('/api') && !request.url.startsWith('/ws')) {
+    try {
+      const indexPath = join(publicPath, 'index.html');
+      const content = await readFile(indexPath, 'utf-8');
+      return reply.header('Content-Type', 'text/html').send(content);
+    } catch (error) {
+      fastify.log.error(String(error));
+      return reply.status(500).send({ error: 'Internal server error' });
+    }
   }
   return reply.status(404).send({ error: 'Not found' });
 });
