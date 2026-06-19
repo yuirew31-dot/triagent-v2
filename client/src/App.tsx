@@ -28,6 +28,16 @@ interface Project {
   icon: string;
 }
 
+// Helper to get API URL from environment or fallback
+const getApiUrl = () => {
+  return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+};
+
+const getWsUrl = () => {
+  const apiUrl = getApiUrl();
+  return apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+};
+
 function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -47,9 +57,8 @@ function App() {
 
   // WebSocket connection
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const ws = new WebSocket(`${protocol}//${host}:3000/ws`);
+    const wsUrl = getWsUrl();
+    const ws = new WebSocket(`${wsUrl}/ws`);
 
     ws.onopen = () => {
       console.log('✅ WebSocket connected');
@@ -208,7 +217,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/tasks', {
+      const response = await fetch(`${getApiUrl()}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: input.trim() }),
