@@ -27,7 +27,7 @@ await fastify.register(fastifyCors, {
 });
 
 // ── STATIC FILES ──────────────────────────────────────────────────────────────
-const publicPath = join(dirname(__dirname), 'dist');
+const publicPath = join(dirname(__dirname), 'client', 'dist');
 await fastify.register(fastifyStatic, {
   root: publicPath,
   prefix: '/',
