@@ -45,7 +45,7 @@ fastify.post('/api/tasks', async (request, reply) => {
 
   const task: Task = {
     id: uuid(),
-    agent: 'auto', // Auto-selected by smart orchestrator
+    agent: 'claude', // Will be overridden by smart orchestrator
     text: prompt,
     status: 'active',
     result: null,

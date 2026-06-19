@@ -124,8 +124,8 @@ function getCachedResponse(prompt: string): string | null {
 
 function setCachedResponse(prompt: string, result: string): void {
   if (responseCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = responseCache.keys().next().value;
-    responseCache.delete(firstKey);
+    const firstKey = responseCache.keys().next().value as string | undefined;
+    if (firstKey) responseCache.delete(firstKey);
   }
   const key = getCacheKey(prompt);
   responseCache.set(key, { result, timestamp: Date.now() });

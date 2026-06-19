@@ -32,20 +32,24 @@ export async function runCohereSearch(taskId: string, query: string, documents: 
       inputType: 'search_query',
     });
 
-    const queryEmbedding = embedResponse.embeddings[0];
-    const docEmbeddings = embedResponse.embeddings.slice(1);
+    const embeddings = Array.isArray(embedResponse.embeddings) 
+      ? embedResponse.embeddings 
+      : (embedResponse.embeddings as any).texts || [];
+    
+    const queryEmbedding = (embeddings as number[][])[0];
+    const docEmbeddings = (embeddings as number[][]).slice(1);
 
     // Compute similarities
-    const scores = docEmbeddings.map((doc, i) => ({
+    const scores = docEmbeddings.map((doc: number[], i: number) => ({
       index: i,
       score: cosineSimilarity(queryEmbedding, doc),
       text: documents[i]
     }));
 
     const topResults = scores
-      .sort((a, b) => b.score - a.score)
+      .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 3)
-      .map(r => r.text);
+      .map((r: any) => r.text);
 
     // RAG через Command R
     const ragPrompt = `Use these documents to answer the user's question:
@@ -53,7 +57,7 @@ export async function runCohereSearch(taskId: string, query: string, documents: 
 QUERY: ${query}
 
 DOCUMENTS:
-${topResults.map((doc, i) => `${i + 1}. ${doc}`).join('\n\n')}
+${topResults.map((doc: string, i: number) => `${i + 1}. ${doc}`).join('\n\n')}
 
 Provide a concise answer based on the documents above.`;
 

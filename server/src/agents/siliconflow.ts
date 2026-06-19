@@ -72,7 +72,7 @@ export async function runSiliconFlow(
       throw new Error(`SiliconFlow HTTP ${response.status}: ${errorText}`);
     }
 
-    const reader = response.body!.getReader();
+    const reader = (response.body as unknown as ReadableStream<Uint8Array>).getReader();
     const decoder = new TextDecoder();
     let fullText = '';
     let hasStarted = false;

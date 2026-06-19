@@ -16,10 +16,7 @@ import { apiRateLimiter } from '../rateLimiter.js';
 
 export async function runGLMFireworks(taskId: string, prompt: string): Promise<void> {
   // Try account pool first, then fallback to .env
-  let apiKey = getActiveKey('glm');
-  if (!apiKey) {
-    apiKey = process.env.FIREWORKS_API_KEY;
-  }
+  let apiKey = getActiveKey('glm') || process.env.FIREWORKS_API_KEY;
   
   if (!apiKey) {
     broadcastTaskUpdate(taskId, 'error', 'No GLM API keys available');
@@ -33,7 +30,7 @@ export async function runGLMFireworks(taskId: string, prompt: string): Promise<v
 
   try {
     const client = new Anthropic({
-      apiKey,
+      apiKey: apiKey as unknown as string,
       baseURL: 'https://api.fireworks.ai/inference/v1',
     });
 

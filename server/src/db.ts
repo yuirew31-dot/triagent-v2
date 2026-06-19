@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// @ts-ignore - sql.js does not have types
 import initSqlJs from 'sql.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
