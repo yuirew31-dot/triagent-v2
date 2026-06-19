@@ -26,21 +26,6 @@ await fastify.register(fastifyCors, {
   credentials: true,
 });
 
-// ── STATIC FILES ──────────────────────────────────────────────────────────────
-const publicPath = join(dirname(__dirname), 'client', 'dist');
-await fastify.register(fastifyStatic, {
-  root: publicPath,
-  prefix: '/',
-});
-
-// SPA fallback: serve index.html for all non-API routes
-fastify.setNotFoundHandler(async (request, reply) => {
-  if (!request.url.startsWith('/api') && !request.url.startsWith('/ws')) {
-    return reply.sendFile('index.html');
-  }
-  return reply.status(404).send({ error: 'Not found' });
-});
-
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 await setupWS(fastify);
 
@@ -162,6 +147,24 @@ fastify.post('/api/compress', async (request, reply) => {
 // Health check
 fastify.get('/health', async (request, reply) => {
   return { status: 'ok', timestamp: Date.now() };
+});
+
+// ── STATIC FILES & SPA FALLBACK ───────────────────────────────────────────────
+const publicPath = join(dirname(__dirname), 'client', 'dist');
+
+// Register static files plugin
+await fastify.register(fastifyStatic, {
+  root: publicPath,
+  prefix: '/',
+  constraints: {}, // Serve all static files
+});
+
+// SPA fallback: serve index.html for all non-API routes
+fastify.setNotFoundHandler(async (request, reply) => {
+  if (!request.url.startsWith('/api') && !request.url.startsWith('/ws')) {
+    return reply.sendFile('index.html', publicPath);
+  }
+  return reply.status(404).send({ error: 'Not found' });
 });
 
 // ── START SERVER ──────────────────────────────────────────────────────────────
