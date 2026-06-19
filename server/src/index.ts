@@ -151,7 +151,7 @@ fastify.get('/health', async (request, reply) => {
 });
 
 // ── STATIC FILES & SPA FALLBACK ───────────────────────────────────────────────
-const publicPath = join(dirname(__dirname), 'client', 'dist');
+const publicPath = join(dirname(dirname(__dirname)), 'client', 'dist');
 
 // Register static files plugin
 await fastify.register(fastifyStatic, {
