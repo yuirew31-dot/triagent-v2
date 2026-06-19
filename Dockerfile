@@ -8,6 +8,10 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
+# Copy config files
+COPY tsconfig.json ./
+COPY tsconfig.json* ./
+
 # Copy source code
 COPY server/ ./server/
 COPY client/ ./client/
