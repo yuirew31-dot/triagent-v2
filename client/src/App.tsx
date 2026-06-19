@@ -28,9 +28,22 @@ interface Project {
   icon: string;
 }
 
-// Helper to get API URL from environment or fallback
+// Helper to get API URL from environment or runtime detection
 const getApiUrl = () => {
-  return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  // First try environment variable (build-time)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Runtime detection based on current hostname
+  const hostname = window.location.hostname;
+  if (hostname.includes('triagent-dashboard')) {
+    // Running on Render dashboard, use triagent-api service
+    return 'https://triagent-api.onrender.com';
+  }
+  
+  // Default for local development
+  return 'http://localhost:3000';
 };
 
 const getWsUrl = () => {
