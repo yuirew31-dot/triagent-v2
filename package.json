@@ -12,6 +12,8 @@
     "client:dev": "cd client && vite",
     "client:build": "cd client && vite build",
     "client:preview": "cd client && vite preview",
+    "build:all": "npm run server:build && npm run client:build",
+    "start:prod": "node server/dist/index.js",
     "db:init": "tsx server/src/db.ts",
     "test": "npx vitest run",
     "test:watch": "npx vitest",

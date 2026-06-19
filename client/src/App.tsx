@@ -1,96 +1,208 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './App.module.css';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
+import { ChatMessage, Message as ChatMessageType } from './components/ChatMessage';
+import { InputArea } from './components/InputArea';
+import { PromptSuggestions, Suggestion } from './components/PromptSuggestions';
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+  status?: 'pending' | 'sent' | 'error';
+  agentName?: string;
+}
+
+interface Chat {
+  id: string;
+  name: string;
+  timestamp: number;
+  messages: Message[];
+}
+
+interface Project {
+  id: string;
+  name: string;
+  icon: string;
 }
 
 function App() {
   const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [taskId, setTaskId] = useState<string>('');
+  const [showExpertMode, setShowExpertMode] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('gemini');
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket connection - create once and keep alive
+  // Get current chat messages
+  const currentChat = chats.find(c => c.id === currentChatId);
+  const messages = currentChat?.messages || [];
+
+  // WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
     const ws = new WebSocket(`${protocol}//${host}:3000/ws`);
-    
+
     ws.onopen = () => {
       console.log('✅ WebSocket connected');
       setIsConnected(true);
     };
+
     ws.onclose = () => {
       console.log('❌ WebSocket closed');
       setIsConnected(false);
     };
+
     ws.onerror = (error) => console.error('WebSocket error:', error);
-    
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      // Filter messages by taskId if we have one
       if (!taskId || data.taskId === taskId) {
         if (data.type === 'chunk') {
           console.log(`📨 Chunk from ${data.taskId}:`, data.content.substring(0, 50));
-          setMessages(prev => {
-            const updated = [...prev];
-            if (updated[updated.length - 1]?.role === 'assistant') {
-              updated[updated.length - 1].content += data.content;
-            }
-            return updated;
-          });
+          updateCurrentChatMessage(data.content);
         } else if (data.type === 'done') {
           console.log(`✅ Task ${data.taskId} done`);
           setIsLoading(false);
         } else if (data.type === 'error') {
           console.log(`❌ Task ${data.taskId} error:`, data.error);
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: `Error: ${data.error}`, 
-            timestamp: Date.now() 
-          }]);
+          addErrorMessage(`Error: ${data.error}`);
           setIsLoading(false);
         }
       }
     };
 
     wsRef.current = ws;
-    // Don't close on component unmount - keep connection alive
     return () => {
-      // Optional: close on cleanup only if needed
-      // ws.close();
+      // Keep connection alive
     };
-  }, []); // Empty dependency array - create once and keep alive
+  }, [taskId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Load chats from localStorage
+  useEffect(() => {
+    const savedChats = localStorage.getItem('triagent-chats');
+    if (savedChats) {
+      try {
+        const parsedChats = JSON.parse(savedChats);
+        setChats(parsedChats);
+        if (parsedChats.length > 0) {
+          setCurrentChatId(parsedChats[0].id);
+        }
+      } catch (e) {
+        console.error('Failed to load chats:', e);
+      }
+    }
+  }, []);
+
+  // Save chats to localStorage
+  useEffect(() => {
+    if (chats.length > 0) {
+      localStorage.setItem('triagent-chats', JSON.stringify(chats));
+    }
+  }, [chats]);
+
+  // Helper functions
+  const createNewChat = () => {
+    const now = Date.now();
+    const newChat: Chat = {
+      id: `chat-${now}`,
+      name: `Chat ${new Date(now).toLocaleDateString()}`,
+      timestamp: now,
+      messages: [],
+    };
+    setChats([newChat, ...chats]);
+    setCurrentChatId(newChat.id);
+  };
+
+  const addMessage = (role: 'user' | 'assistant', content: string) => {
+    if (!currentChatId) return;
+
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      role,
+      content,
+      timestamp: Date.now(),
+      status: 'sent',
+    };
+
+    setChats(chats.map(chat => {
+      if (chat.id === currentChatId) {
+        return { ...chat, messages: [...chat.messages, newMessage] };
+      }
+      return chat;
+    }));
+  };
+
+  const updateCurrentChatMessage = (content: string) => {
+    if (!currentChatId) return;
+
+    setChats(chats.map(chat => {
+      if (chat.id === currentChatId) {
+        const updatedMessages = [...chat.messages];
+        if (updatedMessages.length > 0 && updatedMessages[updatedMessages.length - 1].role === 'assistant') {
+          updatedMessages[updatedMessages.length - 1].content += content;
+        }
+        return { ...chat, messages: updatedMessages };
+      }
+      return chat;
+    }));
+  };
+
+  const addErrorMessage = (errorText: string) => {
+    if (!currentChatId) return;
+
+    setChats(chats.map(chat => {
+      if (chat.id === currentChatId) {
+        return {
+          ...chat,
+          messages: [
+            ...chat.messages,
+            {
+              id: `msg-${Date.now()}`,
+              role: 'assistant',
+              content: errorText,
+              timestamp: Date.now(),
+              status: 'error',
+            },
+          ],
+        };
+      }
+      return chat;
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !currentChatId) return;
+
+    // Update chat name if it's the first message
+    if (messages.length === 0) {
+      setChats(chats.map(chat => {
+        if (chat.id === currentChatId) {
+          return { ...chat, name: input.substring(0, 50) };
+        }
+        return chat;
+      }));
+    }
 
     // Add user message
-    const userMessage: Message = { 
-      role: 'user', 
-      content: input, 
-      timestamp: Date.now() 
-    };
-    setMessages(prev => [...prev, userMessage]);
-    
+    addMessage('user', input);
+
     // Add loading assistant message
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: '🔄 Processing...', 
-      timestamp: Date.now() 
-    }]);
+    addMessage('assistant', 'AI is thinking...');
 
     setInput('');
     setIsLoading(true);
@@ -99,100 +211,124 @@ function App() {
       const response = await fetch('http://localhost:3000/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: input.trim() })
+        body: JSON.stringify({ prompt: input.trim() }),
       });
 
       const data = await response.json();
       setTaskId(data.taskId);
 
       // Replace loading message
-      setMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { 
-          role: 'assistant', 
-          content: '', 
-          timestamp: Date.now() 
-        };
-        return updated;
-      });
+      setChats(chats.map(chat => {
+        if (chat.id === currentChatId) {
+          const updatedMessages = [...chat.messages];
+          if (updatedMessages.length > 0) {
+            updatedMessages[updatedMessages.length - 1].content = '';
+          }
+          return { ...chat, messages: updatedMessages };
+        }
+        return chat;
+      }));
     } catch (error) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
-        timestamp: Date.now() 
-      }]);
+      addErrorMessage(
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       setIsLoading(false);
     }
   };
 
+  const handleSuggestionSelect = (suggestion: Suggestion) => {
+    setInput(suggestion.title);
+  };
+
+  const handleNewChat = () => {
+    createNewChat();
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    setCurrentChatId(chatId);
+  };
+
+  const handleLogoClick = () => {
+    setShowExpertMode(true);
+  };
+
   return (
-    <div className={styles.app}>
-      {/* Animated background */}
-      <div className={styles.background}>
-        <div className={styles.stars}></div>
-        <div className={styles.nebula}></div>
-        <div className={styles.grid}></div>
-      </div>
+    <div className={`${styles.app} theme-${currentTheme}`}>
+      {/* Top Bar */}
+      <TopBar
+        conversationName={currentChat?.name || 'New Conversation'}
+        onSearch={() => console.log('Search')}
+        onNotifications={() => console.log('Notifications')}
+        onSettings={() => console.log('Settings')}
+        onProfile={() => console.log('Profile')}
+        onLogoClick={handleLogoClick}
+      />
 
-      {/* Main content */}
       <div className={styles.container}>
-        {/* Header */}
-        <header className={styles.header}>
-          <div className={styles.headerContent}>
-            <div className={styles.logo}>
-              <span className={styles.logoIcon}>⚙️</span>
-              <h1>TriAgent</h1>
-            </div>
-            <div className={`${styles.status} ${isConnected ? styles.statusActive : styles.statusInactive}`}>
-              <span className={styles.statusDot}></span>
-              {isConnected ? 'Connected' : 'Offline'}
-            </div>
-          </div>
-        </header>
+        {/* Sidebar */}
+        <Sidebar
+          chats={chats}
+          projects={projects}
+          activeChat={currentChatId || ''}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          onSelectProject={() => console.log('Select project')}
+          onSearch={() => console.log('Search')}
+          onSettings={() => console.log('Settings')}
+        />
 
-        {/* Chat area */}
-        <main className={styles.chatArea}>
-          <div className={styles.messages}>
-            {messages.length === 0 ? (
-              <div className={styles.welcome}>
-                <div className={styles.welcomeIcon}>🚀</div>
-                <h2>TriAgent Orchestrator</h2>
-                <p>Multi-Agent AI System with Intelligent Task Distribution</p>
-              </div>
-            ) : (
-              messages.map((msg, idx) => (
-                <div key={idx} className={`${styles.message} ${styles[msg.role]}`}>
-                  <div className={styles.messageContent}>{msg.content}</div>
-                </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+        {/* Main Content Area */}
+        <main className={styles.mainContent}>
+          {/* Chat Messages */}
+          {messages.length === 0 ? (
+            <PromptSuggestions onSelect={handleSuggestionSelect} />
+          ) : (
+            <div className={styles.messagesContainer}>
+              {messages.map(msg => (
+                <ChatMessage
+                  key={msg.id}
+                  message={{
+                    id: msg.id,
+                    role: msg.role,
+                    content: msg.content,
+                    timestamp: msg.timestamp,
+                    agentName: msg.agentName,
+                  }}
+                  isLoading={isLoading && msg.role === 'assistant' && msg === messages[messages.length - 1]}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+
+          {/* Input Area */}
+          <InputArea
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            onAttachFile={() => console.log('Attach file')}
+            onVoiceInput={() => console.log('Voice input')}
+            onImageUpload={() => console.log('Image upload')}
+          />
         </main>
-
-        {/* Input area */}
-        <footer className={styles.inputArea}>
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.inputContainer}>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Describe your task..."
-                disabled={isLoading}
-                className={styles.input}
-              />
-              <button 
-                type="submit" 
-                disabled={isLoading || !input.trim()}
-                className={styles.submitBtn}
-              >
-                <span className={styles.btnIcon}>→</span>
-              </button>
-            </div>
-          </form>
-        </footer>
       </div>
+
+      {/* Expert Mode Modal (hidden by default) */}
+      {showExpertMode && (
+        <div className={styles.expertModeOverlay}>
+          <div className={styles.expertModePanel}>
+            <button
+              className={styles.closeButton}
+              onClick={() => setShowExpertMode(false)}
+            >
+              ✕
+            </button>
+            <h2>Expert Mode</h2>
+            <p>Internal agent coordination system (for developers only)</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
