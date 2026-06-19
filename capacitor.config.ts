@@ -1,12 +1,11 @@
-// Placeholder for Capacitor app configuration
-export const config = {
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
   appId: 'com.triagent.app',
-  appName: 'TriAgent v2',
-  webDir: '../server/public',
+  appName: 'TriAgent',
+  webDir: 'dist',
   server: {
     androidScheme: 'https',
-    url: 'http://localhost:5173',
-    cleartext: true,
   },
   plugins: {
     SplashScreen: {
@@ -14,3 +13,5 @@ export const config = {
     },
   },
 };
+
+export default config;
